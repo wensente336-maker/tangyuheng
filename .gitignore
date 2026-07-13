@@ -1,0 +1,9 @@
+.DS_Store
+data/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.env
+recording*.webm
+transcription_segments/

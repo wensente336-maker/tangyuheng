@@ -52,7 +52,19 @@ def summarize(meta, transcript):
     base=os.environ.get("HERMES_LLM_BASE_URL","").rstrip("/"); key=os.environ.get("HERMES_LLM_API_KEY","")
     if not base or not key: raise RuntimeError("未配置 HERMES_LLM_BASE_URL/HERMES_LLM_API_KEY")
     schema=(ROOT/"references/minutes-schema.md").read_text(encoding="utf-8")
-    prompt=f"你是唐予衡，内部项目计划经理。严格根据逐字稿生成会议纪要，不得虚构负责人、日期、决策或交付物。缺失信息写待确认。\n会议元数据：{json.dumps(meta,ensure_ascii=False)}\n{schema}\n逐字稿：\n{transcript}"
+    prompt=f"""你是唐予衡，育才国际内部项目计划经理。请把会议转化成可以直接执行、检查和跟进的工作清单。
+
+最高优先级是待办任务：逐项识别待办事项、最终负责人、协作人员、业务对象、具体要求、交付物、验收标准和完成时间。不得用会议摘要代替任务清单。不得把被提及的人自动认定为负责人，不得把“尽快、后续、回头”等模糊表达虚构成具体日期。信息不明确时保留任务并标记待确认。
+
+严格依据逐字稿，不得虚构客户、学生、项目、人员、金额、日期、决策或业务承诺。先执行提示词中的提取规则和输出前自检，再只返回合法 JSON。
+
+会议元数据：
+{json.dumps(meta,ensure_ascii=False)}
+
+{schema}
+
+会议逐字稿：
+{transcript}"""
     body=json.dumps({"model":os.environ.get("HERMES_LLM_MODEL","deepseek-chat"),"temperature":0.1,"response_format":{"type":"json_object"},"messages":[{"role":"user","content":prompt}]},ensure_ascii=False).encode()
     req=request.Request(base+"/chat/completions",data=body,headers={"Authorization":f"Bearer {key}","Content-Type":"application/json"})
     with request.urlopen(req,timeout=1800) as r: out=json.loads(r.read())
